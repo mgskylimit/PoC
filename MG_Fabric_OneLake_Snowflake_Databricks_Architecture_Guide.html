@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Enterprise architecture guide comparing Microsoft Fabric OneLake, Snowflake and Databricks.">
+<title>Microsoft Fabric OneLake vs. Snowflake vs. Databricks</title>
+<style>
+:root{--navy:#163a5f;--blue:#2874a6;--ink:#1f2937;--muted:#64748b;--line:#d9e2ec;--paper:#fff;--bg:#f3f6fa;--bluebg:#eaf2f8;--tealbg:#e7f5f5;--greenbg:#edf7ef}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.62 Aptos,Segoe UI,Arial,sans-serif}
+.layout{display:grid;grid-template-columns:275px minmax(0,1fr);min-height:100vh}
+.sidebar{background:#102f4d;color:#eaf2f8;padding:26px 18px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{font-size:12px;letter-spacing:.12em;font-weight:700;color:#9fc4e3;margin:0 10px 12px}
+.sidebar h2{font-size:18px;line-height:1.25;margin:0 10px 8px;color:white}
+.sidebar .sub{font-size:12px;color:#b8c9d9;margin:0 10px 22px}
+.nav a{display:block;color:#dce8f2;text-decoration:none;padding:9px 11px;border-radius:8px;font-size:13px;margin:3px 0}
+.nav a:hover,.nav a.active{background:#245477;color:white}
+.nav .num{display:inline-block;width:24px;color:#9fc4e3;font-weight:700}
+.main{padding:34px 42px 70px;min-width:0}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 auto 18px;max-width:1100px}
+.toolbar span{font-size:12px;color:var(--muted)}
+.toolbar button{border:1px solid var(--line);background:white;color:var(--navy);border-radius:8px;padding:8px 12px;cursor:pointer}
+.content{max-width:1100px;margin:auto;background:var(--paper);padding:42px 48px 58px;border:1px solid #e5eaf0;border-radius:14px;box-shadow:0 8px 30px rgba(15,40,70,.06);min-height:80vh}
+.page{display:none}.page.active{display:block}
+h1{font-size:30px;line-height:1.18;color:var(--navy);margin:0 0 20px;letter-spacing:-.02em}
+h2{font-size:21px;color:var(--navy);margin:30px 0 10px;padding-bottom:6px;border-bottom:1px solid #e6edf3}
+h3{font-size:16px;color:#1f5a85;margin:20px 0 7px}
+p{margin:9px 0 13px}li{margin:5px 0}ul,ol{padding-left:24px}
+.lede{font-size:19px;color:#5a7188;margin-top:-12px;margin-bottom:26px}
+.callout{background:#eaf2f8;border-left:4px solid #2874a6;border-radius:8px;padding:16px 19px;margin:20px 0}
+.callout p:last-child{margin-bottom:0}.tag,.pill{display:inline-block;background:#e6f4ea;color:#246b3c;border-radius:99px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.02em}
+table{border-collapse:collapse;width:100%;margin:14px 0 20px;font-size:13px;line-height:1.45}
+th{background:#163a5f;color:white;text-align:left;font-weight:650}
+th,td{padding:9px 10px;border:1px solid #dbe4ed;vertical-align:top}
+tbody tr:nth-child(even){background:#f4f7fa}
+.diagram{border:1px solid #e1e8ef;background:#fbfdff;border-radius:12px;padding:14px;margin:18px 0 22px;overflow:hidden}
+.diagram svg{display:block;width:100%;height:auto;max-height:560px}
+.diagram small{display:block;color:#64748b;font-size:11px;margin:7px 4px 0}
+.svgh{font:700 20px Aptos,Arial;fill:#163a5f}.svglabel{font:700 15px Aptos,Arial;fill:#24445e}.svgs{font:12px Aptos,Arial;fill:#52677a}
+.bluebox{fill:#eaf2f8;stroke:#7aa8ca;stroke-width:2}.blueinner{fill:#d4e7f5;stroke:#7aa8ca;stroke-width:1.5}
+.tealbox{fill:#e7f5f5;stroke:#73aaa9;stroke-width:2}.tealinner{fill:#d0ecea;stroke:#73aaa9;stroke-width:1.5}
+.greenbox{fill:#edf7ef;stroke:#82b48a;stroke-width:2}.greeninner{fill:#dcefe0;stroke:#82b48a;stroke-width:1.5}
+.whitebox{fill:#fff;stroke:#b9c9d8;stroke-width:1.5}.connector{fill:none;stroke:#6c879d;stroke-width:2.5;stroke-linecap:round}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0}.cards article{border:1px solid var(--line);border-radius:10px;padding:16px;background:#fbfdff}.cards h3{margin-top:0}
+.refs a{color:#1769aa;text-decoration:none}.refs a:hover{text-decoration:underline}
+.footer{max-width:1100px;margin:14px auto 0;color:#718096;font-size:11px;text-align:center}
+.mobilehead{display:none}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{position:relative;height:auto;padding:16px}.sidebar .sub{margin-bottom:10px}.nav{display:flex;overflow:auto;gap:4px;padding-bottom:4px}.nav a{white-space:nowrap}.main{padding:18px 12px}.content{padding:26px 20px}.cards{grid-template-columns:1fr}h1{font-size:26px}}
+@media print{body{background:white}.layout{display:block}.sidebar,.toolbar,.footer{display:none!important}.main{padding:0}.content{border:0;box-shadow:none;padding:0;max-width:none}.page{display:block!important;break-after:page}.page:last-child{break-after:auto}.diagram{break-inside:avoid}a{color:inherit;text-decoration:none}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="brand">ENTERPRISE ARCHITECTURE GUIDE</div>
+  <h2>Fabric OneLake vs.<br>Snowflake vs.<br>Databricks</h2>
+  <p class="sub">Architecture concepts, capabilities and integration patterns</p>
+  <nav class="nav" aria-label="Section navigation"><a href="#overview" data-page="overview"><span class="num">00</span>Overview</a>
+<a href="#fabric" data-page="fabric"><span class="num">01</span>1. Microsoft Fabric &amp; OneLake</a>
+<a href="#snowflake" data-page="snowflake"><span class="num">02</span>2. Snowflake</a>
+<a href="#databricks" data-page="databricks"><span class="num">03</span>3. Databricks</a>
+<a href="#comparison" data-page="comparison"><span class="num">04</span>4. Detailed comparison</a>
+<a href="#coexist" data-page="coexist"><span class="num">05</span>5. Coexistence patterns</a>
+<a href="#crosscloud" data-page="crosscloud"><span class="num">06</span>6. Cross-cloud access</a>
+<a href="#recommendations" data-page="recommendations"><span class="num">07</span>7. Enterprise architecture recommendations</a>
+<a href="#references" data-page="references"><span class="num">08</span>8. References &amp; discussion</a></nav>
+</aside>
+<main class="main">
+  <div class="toolbar"><span>Discussion guide · 12 November 2026</span><div><button onclick="window.print()">Print / Save PDF</button></div></div>
+  <div class="content"><section class="page" id="overview">
+<h1>Microsoft Fabric OneLake vs. Snowflake vs. Databricks</h1>
+<p class="lede">Detailed architecture explanation and enterprise comparison</p>
+<p>Microsoft Fabric OneLake, Snowflake, and Databricks are three major platforms in the modern enterprise data architecture landscape. However, they are fundamentally different products, and it is important to understand their architectural differences before deciding how they should coexist in an enterprise environment.</p>
+<div class="callout"><strong>Start with the distinction</strong><ul><li><strong>OneLake</strong> is primarily a unified data storage and access foundation within Microsoft Fabric.</li><li><strong>Snowflake</strong> is a cloud-native data platform combining storage, compute, data management, and analytics.</li><li><strong>Databricks</strong> is a data intelligence platform built around the lakehouse architecture, combining data engineering, data science, machine learning, AI, and SQL analytics.</li></ul><p>OneLake should therefore not be viewed as a direct replacement for either Snowflake or Databricks.</p></div>
+<h2>How to read this comparison</h2>
+<p>Look at the platforms from two perspectives:</p>
+<ol><li><strong>Data architecture:</strong> How data is stored, accessed, processed, governed, and shared.</li><li><strong>Enterprise architecture:</strong> What role each platform should play, whether they should coexist, and how to avoid unnecessary data duplication, integration complexity, and vendor lock-in.</li></ol>
+<div class="diagram">
+<svg viewBox="0 0 960 390" role="img" aria-label="High-level comparison of Fabric, Snowflake and Databricks">
+<rect x="20" y="20" width="290" height="340" rx="16" class="bluebox"/><text x="165" y="58" text-anchor="middle" class="svgh">Microsoft Fabric</text><text x="165" y="82" text-anchor="middle" class="svgs">Integrated SaaS analytics platform</text>
+<rect x="45" y="110" width="240" height="64" rx="10" class="blueinner"/><text x="165" y="148" text-anchor="middle" class="svglabel">OneLake</text>
+<rect x="45" y="196" width="72" height="55" rx="8" class="whitebox"/><text x="81" y="228" text-anchor="middle" class="svgs">Spark</text><rect x="129" y="196" width="72" height="55" rx="8" class="whitebox"/><text x="165" y="228" text-anchor="middle" class="svgs">SQL</text><rect x="213" y="196" width="72" height="55" rx="8" class="whitebox"/><text x="249" y="228" text-anchor="middle" class="svgs">Power BI</text>
+<text x="165" y="290" text-anchor="middle" class="svgs">Shared storage + workloads</text><text x="165" y="312" text-anchor="middle" class="svgs">within Fabric</text>
+<rect x="335" y="20" width="290" height="340" rx="16" class="tealbox"/><text x="480" y="58" text-anchor="middle" class="svgh">Snowflake</text><text x="480" y="82" text-anchor="middle" class="svgs">Managed cloud data platform</text>
+<rect x="360" y="110" width="240" height="64" rx="10" class="tealinner"/><text x="480" y="148" text-anchor="middle" class="svglabel">Snowflake-managed storage</text>
+<rect x="360" y="196" width="72" height="55" rx="8" class="whitebox"/><text x="396" y="228" text-anchor="middle" class="svgs">WH A</text><rect x="444" y="196" width="72" height="55" rx="8" class="whitebox"/><text x="480" y="228" text-anchor="middle" class="svgs">WH B</text><rect x="528" y="196" width="72" height="55" rx="8" class="whitebox"/><text x="564" y="228" text-anchor="middle" class="svgs">WH C</text>
+<text x="480" y="290" text-anchor="middle" class="svgs">Independent compute</text><text x="480" y="312" text-anchor="middle" class="svgs">warehouses</text>
+<rect x="650" y="20" width="290" height="340" rx="16" class="greenbox"/><text x="795" y="58" text-anchor="middle" class="svgh">Databricks</text><text x="795" y="82" text-anchor="middle" class="svgs">Open lakehouse platform</text>
+<rect x="675" y="110" width="240" height="64" rx="10" class="greeninner"/><text x="795" y="140" text-anchor="middle" class="svglabel">ADLS / S3 / GCS</text><text x="795" y="158" text-anchor="middle" class="svgs">Delta / Iceberg / Parquet</text>
+<rect x="675" y="196" width="72" height="55" rx="8" class="whitebox"/><text x="711" y="228" text-anchor="middle" class="svgs">Spark</text><rect x="759" y="196" width="72" height="55" rx="8" class="whitebox"/><text x="795" y="228" text-anchor="middle" class="svgs">SQL</text><rect x="843" y="196" width="72" height="55" rx="8" class="whitebox"/><text x="879" y="228" text-anchor="middle" class="svgs">ML / AI</text>
+<text x="795" y="290" text-anchor="middle" class="svgs">Cloud object storage</text><text x="795" y="312" text-anchor="middle" class="svgs">+ multiple engines</text></svg>
+<small>Conceptual architecture comparison. Boxes are illustrative, not deployment diagrams.</small></div>
+</section>
+<section class="page" id="fabric">
+<h1>1. Understanding Microsoft Fabric and OneLake</h1>
+<h2>1.1 What is Microsoft Fabric?</h2>
+<p>Microsoft Fabric is an integrated, SaaS-based analytics platform. It brings multiple data and analytics capabilities into one environment.</p>
+<table><thead><tr><th>Fabric component</th><th>Primary responsibility</th></tr></thead><tbody>
+<tr><td>OneLake</td><td>Unified logical data lake and storage foundation</td></tr><tr><td>Data Factory</td><td>Data integration, ingestion and orchestration</td></tr><tr><td>Data Engineering</td><td>Apache Spark-based data processing</td></tr><tr><td>Data Science</td><td>Machine learning and data science</td></tr><tr><td>Data Warehouse</td><td>SQL-based enterprise data warehousing</td></tr><tr><td>Real-Time Intelligence</td><td>Streaming and event analytics</td></tr><tr><td>Power BI</td><td>Business intelligence, semantic models and reporting</td></tr></tbody></table>
+<p>The key architectural concept is that these workloads share a common storage foundation: OneLake. Instead of requiring every workload to maintain its own independent storage, Fabric allows workloads to access shared data.</p>
+<h2>1.2 What exactly is OneLake?</h2>
+<p>OneLake is Microsoft's unified logical data lake for an entire Fabric tenant. It is built on Azure Data Lake Storage Gen2 technology, but Microsoft manages the underlying storage infrastructure as part of Fabric.</p>
+<p>Think of OneLake as an enterprise-wide logical storage layer, similar conceptually to how OneDrive provides a unified file-storage experience for Microsoft 365. However, OneLake is designed for analytical data rather than general-purpose documents.</p>
+<ul><li>Provide a common data storage foundation for Fabric workloads.</li><li>Reduce data duplication between analytical engines.</li><li>Make data easier to discover and share.</li><li>Support open data formats.</li><li>Provide centralized security and governance capabilities.</li><li>Enable different analytical engines to work with the same underlying data.</li></ul>
+<p>OneLake is automatically provisioned when an organization has a Fabric tenant. There is no need to independently provision an Azure Data Lake Storage account for the OneLake service itself.</p>
+<h2>1.3 OneLake architecture and hierarchy</h2>
+<div class="diagram"><svg viewBox="0 0 900 470" role="img" aria-label="OneLake tenant, workspace and data items hierarchy">
+<rect x="275" y="18" width="350" height="65" rx="12" class="bluebox"/><text x="450" y="47" text-anchor="middle" class="svgh">Fabric Tenant</text><text x="450" y="67" text-anchor="middle" class="svgs">OneLake organizational boundary</text>
+<path d="M450 83 V125 M220 125 H680 M220 125 V158 M680 125 V158" class="connector"/>
+<rect x="70" y="158" width="300" height="64" rx="10" class="blueinner"/><text x="220" y="185" text-anchor="middle" class="svglabel">Workspace A</text><text x="220" y="205" text-anchor="middle" class="svgs">Finance</text>
+<rect x="530" y="158" width="300" height="64" rx="10" class="blueinner"/><text x="680" y="185" text-anchor="middle" class="svglabel">Workspace B</text><text x="680" y="205" text-anchor="middle" class="svgs">Sales</text>
+<path d="M220 222 V260 M680 222 V260" class="connector"/>
+<rect x="45" y="260" width="350" height="170" rx="12" class="whitebox"/><text x="220" y="291" text-anchor="middle" class="svglabel">Lakehouse</text><text x="220" y="320" text-anchor="middle" class="svgs">Files / Tables</text><text x="220" y="354" text-anchor="middle" class="svgs">Raw data • Curated data</text><text x="220" y="380" text-anchor="middle" class="svgs">Delta tables</text>
+<rect x="505" y="260" width="350" height="170" rx="12" class="whitebox"/><text x="680" y="291" text-anchor="middle" class="svglabel">Warehouse</text><text x="680" y="320" text-anchor="middle" class="svgs">SQL analytics</text><text x="680" y="354" text-anchor="middle" class="svgs">Fact tables • Dimensions</text><text x="680" y="380" text-anchor="middle" class="svgs">SQL objects</text></svg><small>Illustrative organization: workspaces contain Fabric items, and their data is stored in the tenant's OneLake.</small></div>
+<p><strong>Tenant:</strong> Represents the organization's Fabric environment and provides the organizational boundary for OneLake.</p>
+<p><strong>Workspace:</strong> Logical containers for organizing data and analytical assets. They can be organized by business domain, project, application, or environment.</p>
+<p><strong>Data items:</strong> Examples include Lakehouse, Warehouse, Mirrored database, Semantic model and Eventhouse.</p>
+<h2>1.4 How does OneLake physically store data?</h2>
+<p>OneLake supports open analytical data formats, particularly Delta Lake (based on Parquet) and Apache Iceberg.</p>
+<p>A Delta table generally consists of:</p><ul><li>Parquet files containing the actual data.</li><li>A transaction log containing metadata and transaction history.</li><li>Schema information.</li><li>Table version information.</li></ul>
+<div class="diagram"><svg viewBox="0 0 850 300" role="img" aria-label="Delta Lake components">
+<rect x="25" y="35" width="235" height="210" rx="12" class="bluebox"/><text x="142" y="70" text-anchor="middle" class="svglabel">Delta table</text><rect x="55" y="95" width="175" height="48" rx="8" class="whitebox"/><text x="142" y="125" text-anchor="middle" class="svgs">Parquet data files</text><rect x="55" y="160" width="175" height="48" rx="8" class="whitebox"/><text x="142" y="190" text-anchor="middle" class="svgs">Transaction log</text>
+<path d="M260 140 H335" class="connector"/><path d="M335 140 V70 H390 M335 140 H390 M335 140 V210 H390" class="connector"/>
+<rect x="390" y="40" width="420" height="62" rx="10" class="greenbox"/><text x="600" y="77" text-anchor="middle" class="svglabel">Storage files and table data</text>
+<rect x="390" y="115" width="420" height="62" rx="10" class="tealbox"/><text x="600" y="152" text-anchor="middle" class="svglabel">ACID transaction and version metadata</text>
+<rect x="390" y="190" width="420" height="62" rx="10" class="bluebox"/><text x="600" y="227" text-anchor="middle" class="svglabel">Schema and table metadata</text></svg></div>
+<p>Open formats create opportunities for different analytical engines to work with the same underlying data. However, open formats do not automatically guarantee complete interoperability. Catalog integration, table-format support, transaction management, security, and write compatibility must also be considered.</p>
+<h2>1.5 OneLake Shortcuts – Zero-copy data access</h2>
+<div class="tag">Important enterprise architecture capability</div>
+<p>A shortcut is a logical reference to data stored somewhere else. It makes external data appear as though it is part of OneLake, without physically copying the data.</p>
+<div class="diagram"><svg viewBox="0 0 900 370" role="img" aria-label="OneLake shortcut references external data">
+<rect x="25" y="30" width="250" height="300" rx="14" class="tealbox"/><text x="150" y="65" text-anchor="middle" class="svgh">External storage</text><rect x="55" y="100" width="190" height="54" rx="8" class="whitebox"/><text x="150" y="133" text-anchor="middle" class="svglabel">AWS S3</text><rect x="55" y="175" width="190" height="54" rx="8" class="whitebox"/><text x="150" y="208" text-anchor="middle" class="svglabel">ADLS Gen2</text><rect x="55" y="250" width="190" height="54" rx="8" class="whitebox"/><text x="150" y="283" text-anchor="middle" class="svglabel">Iceberg storage</text>
+<path d="M275 180 H400" class="connector"/><text x="337" y="162" text-anchor="middle" class="svgs">Reference</text>
+<rect x="400" y="30" width="475" height="300" rx="14" class="bluebox"/><text x="637" y="65" text-anchor="middle" class="svgh">OneLake namespace</text><rect x="445" y="110" width="385" height="75" rx="10" class="blueinner"/><text x="637" y="141" text-anchor="middle" class="svglabel">Shortcut</text><text x="637" y="163" text-anchor="middle" class="svgs">Logical reference to external data</text><rect x="445" y="220" width="385" height="65" rx="10" class="whitebox"/><text x="637" y="258" text-anchor="middle" class="svglabel">Fabric workloads can access referenced data</text></svg><small>Conceptual illustration: shortcut creation does not itself copy the referenced files.</small></div>
+<p>For example, an organization may have customer transaction data in an AWS S3 bucket. Instead of extracting and copying the data into OneLake, it can create a shortcut to supported S3 data. The actual data remains in S3.</p>
+<table><thead><tr><th>External source</th><th>Shortcut capability</th></tr></thead><tbody><tr><td>ADLS Gen2</td><td>Yes</td></tr><tr><td>Azure Blob Storage</td><td>Yes</td></tr><tr><td>Amazon S3</td><td>Yes</td></tr><tr><td>OneLake in another workspace</td><td>Yes</td></tr><tr><td>OneLake across tenants</td><td>Yes, subject to supported configuration</td></tr><tr><td>Iceberg-compatible storage</td><td>Supported scenarios; validate exact implementation</td></tr><tr><td>Relational database tables</td><td>Not as ordinary file shortcuts; use connector, mirroring or pipeline patterns</td></tr></tbody></table>
+<p>Shortcuts primarily reference files and open-format data. A traditional SQL Server database table cannot simply be exposed as a file shortcut.</p>
+<h2>1.6 OneLake Mirroring – Replication and metadata integration</h2>
+<p>Mirroring is different from shortcuts. Fabric provides different approaches, and their data movement behavior differs.</p>
+<table><thead><tr><th>Type</th><th>Function</th><th>Data copied?</th></tr></thead><tbody><tr><td>Database mirroring</td><td>Replicates database changes into OneLake</td><td>Yes</td></tr><tr><td>Metadata mirroring</td><td>Synchronizes metadata/catalog references for supported external data</td><td>Not necessarily; depends on mechanism</td></tr><tr><td>Open mirroring</td><td>Allows supported producers to publish changes into Fabric</td><td>Data is written into OneLake</td></tr></tbody></table>
+<h3>Example: Snowflake integration</h3>
+<p><strong>Scenario A – Snowflake data replication:</strong> Fabric connects to Snowflake, selected tables are replicated, data is stored in OneLake in Delta format, and Fabric workloads can query the replicated data. This creates a second physical copy.</p>
+<p><strong>Scenario B – Snowflake Iceberg tables:</strong> Where the table, storage and catalog configuration are supported, Fabric can reference underlying Iceberg data through shortcuts. The data remains in its original storage location.</p>
+<p><strong>Scenario C – Metadata mirroring:</strong> Fabric can synchronize external catalog metadata and reference open-format data rather than copying the underlying table data. Validate exact source support and behavior.</p>
+<h2>1.7 Direct Lake – A particularly important Power BI capability</h2>
+<p>Direct Lake allows Power BI semantic models to access supported Delta tables in OneLake directly, without requiring a conventional full import into the semantic model or issuing a DirectQuery for every report interaction.</p>
+<table><thead><tr><th>Mode</th><th>Behavior</th></tr></thead><tbody><tr><td>Import</td><td>Data is loaded into the Power BI semantic model.</td></tr><tr><td>DirectQuery</td><td>Power BI sends queries to the underlying data source.</td></tr><tr><td>Direct Lake</td><td>Power BI accesses supported OneLake Delta data directly.</td></tr></tbody></table>
+<p>Direct Lake is not a universal connector to all external databases. If data is in a proprietary Snowflake table, Direct Lake cannot simply read it as a native OneLake Delta table. Use the Snowflake connector, an appropriate replication path, or supported open-format interoperability.</p>
+</section>
+<section class="page" id="snowflake">
+<h1>2. Understanding Snowflake architecture</h1>
+<p>Snowflake is a cloud-native data platform designed primarily for data warehousing, SQL analytics, data engineering, and increasingly AI workloads.</p>
+<div class="diagram"><svg viewBox="0 0 860 390" role="img" aria-label="Snowflake three-layer architecture">
+<rect x="55" y="20" width="750" height="90" rx="14" class="bluebox"/><text x="430" y="55" text-anchor="middle" class="svgh">Cloud services layer</text><text x="430" y="82" text-anchor="middle" class="svgs">Authentication • Metadata • Query optimization • Access control</text>
+<rect x="55" y="145" width="750" height="130" rx="14" class="tealbox"/><text x="430" y="178" text-anchor="middle" class="svgh">Compute layer</text>
+<rect x="100" y="198" width="185" height="52" rx="8" class="whitebox"/><text x="192" y="230" text-anchor="middle" class="svglabel">Virtual warehouse A</text><rect x="337" y="198" width="185" height="52" rx="8" class="whitebox"/><text x="429" y="230" text-anchor="middle" class="svglabel">Virtual warehouse B</text><rect x="574" y="198" width="185" height="52" rx="8" class="whitebox"/><text x="666" y="230" text-anchor="middle" class="svglabel">Virtual warehouse C</text>
+<rect x="55" y="310" width="750" height="62" rx="14" class="greenbox"/><text x="430" y="348" text-anchor="middle" class="svglabel">Storage layer – Snowflake-managed cloud storage</text></svg></div>
+<p>Its architecture has three main layers.</p>
+<h2>2.1 Storage layer</h2>
+<p>Snowflake stores data in cloud object storage managed as part of the Snowflake service. The underlying cloud provider can be AWS, Microsoft Azure or Google Cloud Platform.</p>
+<p>Snowflake manages the physical storage infrastructure. Traditional native tables use Snowflake-managed storage structures, including micro-partitions. Snowflake also supports Apache Iceberg tables, enabling interoperability with external engines.</p>
+<h2>2.2 Compute layer</h2>
+<p>Snowflake uses virtual warehouses for processing SQL queries and other workloads. A virtual warehouse is an independent compute cluster.</p>
+<table><thead><tr><th>Virtual warehouse</th><th>Purpose</th></tr></thead><tbody><tr><td>WH_FINANCE</td><td>Finance reporting</td></tr><tr><td>WH_SALES</td><td>Sales analytics</td></tr><tr><td>WH_ETL</td><td>Data transformation</td></tr><tr><td>WH_DATA_SCIENCE</td><td>Data science workloads</td></tr></tbody></table>
+<p>One of Snowflake's major advantages is workload isolation. Different virtual warehouses can process queries against the same underlying data without necessarily affecting each other's compute resources. Compute can be independently scaled.</p>
+<h2>2.3 Cloud services layer</h2>
+<p>This layer manages authentication and authorization, query parsing and optimization, metadata management, access control, security and infrastructure coordination.</p>
+<h2>2.4 Snowflake's architectural strengths</h2>
+<ul><li>Enterprise SQL data warehousing.</li><li>Independent compute scaling.</li><li>Workload isolation.</li><li>Structured and semi-structured data analytics.</li><li>Data sharing between organizations.</li><li>Managed data platform operations.</li><li>SQL-centric analytics and data engineering.</li></ul>
+<p>Snowflake is no longer just a traditional data warehouse. Its support for Iceberg, Python, Snowpark, and AI workloads has expanded its capabilities significantly.</p>
+</section>
+<section class="page" id="databricks">
+<h1>3. Understanding Databricks architecture</h1>
+<p>Databricks is built around the Lakehouse architecture. The fundamental idea is to combine the advantages of data lakes (scalability, flexibility and low-cost object storage) with data warehouses (structured data management, reliability, transactional consistency and SQL analytics).</p>
+<div class="diagram"><svg viewBox="0 0 860 390" role="img" aria-label="Databricks lakehouse architecture">
+<rect x="55" y="20" width="750" height="80" rx="14" class="bluebox"/><text x="430" y="53" text-anchor="middle" class="svgh">Governance and catalog layer</text><text x="430" y="78" text-anchor="middle" class="svgs">Unity Catalog • Discovery • Permissions • Lineage</text>
+<rect x="55" y="130" width="750" height="125" rx="14" class="tealbox"/><text x="430" y="163" text-anchor="middle" class="svgh">Compute layer</text><rect x="95" y="185" width="145" height="48" rx="8" class="whitebox"/><text x="167" y="215" text-anchor="middle" class="svglabel">Apache Spark</text><rect x="270" y="185" width="145" height="48" rx="8" class="whitebox"/><text x="342" y="215" text-anchor="middle" class="svglabel">Databricks SQL</text><rect x="445" y="185" width="145" height="48" rx="8" class="whitebox"/><text x="517" y="215" text-anchor="middle" class="svglabel">Jobs / Streaming</text><rect x="620" y="185" width="145" height="48" rx="8" class="whitebox"/><text x="692" y="215" text-anchor="middle" class="svglabel">ML / AI</text>
+<rect x="55" y="285" width="750" height="80" rx="14" class="greenbox"/><text x="430" y="320" text-anchor="middle" class="svgh">Cloud object storage</text><text x="430" y="346" text-anchor="middle" class="svgs">ADLS Gen2 • Amazon S3 • Google Cloud Storage • Delta / Iceberg / Parquet</text></svg></div>
+<p>Unlike Fabric, Databricks is designed to work with the cloud provider's object storage.</p>
+<table><thead><tr><th>Cloud</th><th>Storage</th></tr></thead><tbody><tr><td>Azure</td><td>ADLS Gen2</td></tr><tr><td>AWS</td><td>Amazon S3</td></tr><tr><td>GCP</td><td>Google Cloud Storage</td></tr></tbody></table>
+<h2>3.1 Storage layer</h2>
+<p>Databricks uses open data formats. Its primary table format is Delta Lake, which provides ACID transactions, schema enforcement, schema evolution and time travel. Databricks also supports Apache Iceberg. The data is stored in the organization's cloud storage rather than exclusively in a proprietary Databricks storage environment.</p>
+<h2>3.2 Compute layer</h2>
+<table><thead><tr><th>Compute</th><th>Purpose</th></tr></thead><tbody><tr><td>Apache Spark</td><td>Distributed data processing</td></tr><tr><td>Databricks SQL</td><td>SQL analytics and data warehousing</td></tr><tr><td>Notebooks</td><td>Python, SQL, Scala and other development</td></tr><tr><td>Jobs</td><td>Scheduled and automated processing</td></tr><tr><td>ML compute</td><td>Machine learning and AI workloads</td></tr><tr><td>Streaming compute</td><td>Real-time data processing</td></tr></tbody></table>
+<h2>3.3 Governance layer – Unity Catalog</h2>
+<p>Unity Catalog is Databricks' centralized data and AI governance solution. It provides data discovery, access control, data lineage, auditing, metadata management, classification and governance across supported workspaces and environments.</p>
+<h2>3.4 Databricks' architectural strengths</h2>
+<ul><li>Large-scale data engineering.</li><li>Complex ETL and ELT processing.</li><li>Advanced analytics.</li><li>Data science and machine learning.</li><li>Generative AI and AI development.</li><li>Batch and streaming processing.</li><li>Open data architecture.</li><li>Multi-cloud data processing.</li></ul>
+<p>Databricks is particularly attractive when an organization has sophisticated data engineering, machine learning, and AI requirements.</p>
+</section>
+<section class="page" id="comparison">
+<h1>4. Detailed comparison: OneLake vs. Snowflake vs. Databricks</h1>
+<h2>4.1 Fundamental architectural differences</h2>
+<div class="diagram"><svg viewBox="0 0 900 355" role="img" aria-label="Three platform architectural models">
+<rect x="15" y="15" width="275" height="325" rx="14" class="bluebox"/><text x="152" y="50" text-anchor="middle" class="svgh">Fabric / OneLake</text><text x="152" y="75" text-anchor="middle" class="svgs">Unified SaaS analytics</text><rect x="40" y="105" width="225" height="58" rx="9" class="blueinner"/><text x="152" y="140" text-anchor="middle" class="svglabel">OneLake</text><rect x="40" y="185" width="65" height="50" rx="8" class="whitebox"/><text x="72" y="215" text-anchor="middle" class="svgs">Spark</text><rect x="120" y="185" width="65" height="50" rx="8" class="whitebox"/><text x="152" y="215" text-anchor="middle" class="svgs">SQL</text><rect x="200" y="185" width="65" height="50" rx="8" class="whitebox"/><text x="232" y="215" text-anchor="middle" class="svgs">BI</text><text x="152" y="275" text-anchor="middle" class="svgs">Shared storage and</text><text x="152" y="295" text-anchor="middle" class="svgs">workload integration</text>
+<rect x="312" y="15" width="275" height="325" rx="14" class="tealbox"/><text x="449" y="50" text-anchor="middle" class="svgh">Snowflake</text><text x="449" y="75" text-anchor="middle" class="svgs">Managed cloud data platform</text><rect x="337" y="105" width="225" height="58" rx="9" class="tealinner"/><text x="449" y="140" text-anchor="middle" class="svglabel">Managed storage</text><rect x="337" y="185" width="65" height="50" rx="8" class="whitebox"/><text x="369" y="215" text-anchor="middle" class="svgs">WH A</text><rect x="417" y="185" width="65" height="50" rx="8" class="whitebox"/><text x="449" y="215" text-anchor="middle" class="svgs">WH B</text><rect x="497" y="185" width="65" height="50" rx="8" class="whitebox"/><text x="529" y="215" text-anchor="middle" class="svgs">WH C</text><text x="449" y="275" text-anchor="middle" class="svgs">Independent compute</text><text x="449" y="295" text-anchor="middle" class="svgs">warehouses</text>
+<rect x="609" y="15" width="275" height="325" rx="14" class="greenbox"/><text x="746" y="50" text-anchor="middle" class="svgh">Databricks</text><text x="746" y="75" text-anchor="middle" class="svgs">Open lakehouse platform</text><rect x="634" y="105" width="225" height="58" rx="9" class="greeninner"/><text x="746" y="132" text-anchor="middle" class="svglabel">ADLS / S3 / GCS</text><text x="746" y="151" text-anchor="middle" class="svgs">Delta / Iceberg / Parquet</text><rect x="634" y="185" width="65" height="50" rx="8" class="whitebox"/><text x="666" y="215" text-anchor="middle" class="svgs">Spark</text><rect x="714" y="185" width="65" height="50" rx="8" class="whitebox"/><text x="746" y="215" text-anchor="middle" class="svgs">SQL</text><rect x="794" y="185" width="65" height="50" rx="8" class="whitebox"/><text x="826" y="215" text-anchor="middle" class="svgs">ML/AI</text><text x="746" y="275" text-anchor="middle" class="svgs">Cloud object storage</text><text x="746" y="295" text-anchor="middle" class="svgs">and multiple engines</text></svg></div>
+<h2>4.2 Feature-by-feature comparison</h2>
+<table><thead><tr><th>Architecture dimension</th><th>OneLake / Fabric</th><th>Snowflake</th><th>Databricks</th></tr></thead><tbody>
+<tr><td>Primary purpose</td><td>Integrated analytics platform</td><td>Cloud data platform</td><td>Data and AI platform</td></tr>
+<tr><td>Storage foundation</td><td>ADLS Gen2-based OneLake</td><td>Cloud storage managed by Snowflake</td><td>Customer cloud object storage</td></tr>
+<tr><td>Storage management</td><td>Microsoft-managed</td><td>Snowflake-managed</td><td>Customer cloud storage with Databricks integration</td></tr>
+<tr><td>Storage formats</td><td>Delta, Iceberg, Parquet</td><td>Native tables, Iceberg</td><td>Delta, Iceberg, Parquet</td></tr>
+<tr><td>Compute</td><td>Fabric workload-specific engines</td><td>Virtual warehouses and other compute</td><td>Spark, SQL, ML and other engines</td></tr>
+<tr><td>SQL analytics</td><td>Fabric Warehouse and SQL endpoints</td><td>Very strong</td><td>Databricks SQL</td></tr>
+<tr><td>Data engineering</td><td>Data Factory and Spark</td><td>SQL, Snowpark and pipelines</td><td>Very strong</td></tr>
+<tr><td>Machine learning</td><td>Supported</td><td>Supported</td><td>Very strong</td></tr>
+<tr><td>Generative AI</td><td>Fabric AI capabilities</td><td>Snowflake AI capabilities</td><td>Very strong</td></tr>
+<tr><td>Streaming</td><td>Real-Time Intelligence</td><td>Streaming and event capabilities</td><td>Structured Streaming and related services</td></tr>
+<tr><td>BI integration</td><td>Native Power BI integration</td><td>External BI connectors</td><td>External BI connectors and Databricks BI</td></tr>
+<tr><td>Data virtualization</td><td>OneLake shortcuts</td><td>External tables and federation</td><td>Lakehouse Federation</td></tr>
+<tr><td>Governance</td><td>Fabric security and Purview integration</td><td>Horizon Catalog</td><td>Unity Catalog</td></tr>
+<tr><td>Multi-cloud</td><td>External data access across clouds</td><td>AWS, Azure, GCP deployments</td><td>AWS, Azure, GCP deployments</td></tr>
+</tbody></table>
+<h2>4.3 Data storage and ownership</h2>
+<table><thead><tr><th>Question</th><th>OneLake</th><th>Snowflake</th><th>Databricks</th></tr></thead><tbody>
+<tr><td>Who manages storage?</td><td>Microsoft</td><td>Snowflake</td><td>Cloud provider/customer</td></tr><tr><td>Can data remain external?</td><td>Yes, supported shortcuts</td><td>Yes, external/Iceberg capabilities</td><td>Yes, native architecture</td></tr><tr><td>Can multiple engines use data?</td><td>Yes</td><td>Yes, especially Iceberg/external access</td><td>Yes</td></tr><tr><td>Storage separated from compute?</td><td>Yes</td><td>Yes</td><td>Yes</td></tr><tr><td>Proprietary storage required?</td><td>No for open-format OneLake data</td><td>Native tables use managed formats</td><td>No</td></tr></tbody></table>
+<p><strong>Interpretation:</strong> Databricks offers the greatest flexibility in choosing and managing underlying object storage. Snowflake offers the greatest abstraction from underlying storage infrastructure. Fabric offers the greatest integration between storage, analytical workloads, and Power BI.</p>
+<h2>4.4 Compute and performance</h2>
+<table><thead><tr><th>Dimension</th><th>Fabric</th><th>Snowflake</th><th>Databricks</th></tr></thead><tbody>
+<tr><td>SQL reporting</td><td>Strong</td><td>Very strong</td><td>Very strong</td></tr><tr><td>Large-scale Spark processing</td><td>Supported</td><td>Not its traditional core strength</td><td>Very strong</td></tr><tr><td>Complex transformation</td><td>Strong</td><td>Strong</td><td>Very strong</td></tr><tr><td>Concurrent SQL workloads</td><td>Capacity-based architecture</td><td>Independent virtual warehouses</td><td>SQL warehouses and other compute</td></tr><tr><td>Machine learning</td><td>Supported</td><td>Supported</td><td>Very strong</td></tr><tr><td>Workload isolation</td><td>Capacity/workload configuration</td><td>Independent virtual warehouses</td><td>Compute/workload configuration</td></tr></tbody></table>
+<p>Fabric uses capacity measured in Capacity Units (CUs), with capacity shared across workloads. Snowflake uses independent virtual warehouses. Databricks offers different compute resources for Spark, SQL, jobs and ML. No platform is universally faster: performance depends on workload, data layout, query patterns, caching, concurrency, sizing and configuration.</p>
+<h2>4.5 Data governance and security</h2>
+<table><thead><tr><th>Capability</th><th>Fabric</th><th>Snowflake</th><th>Databricks</th></tr></thead><tbody>
+<tr><td>Central data catalog</td><td>OneLake Catalog</td><td>Horizon Catalog</td><td>Unity Catalog</td></tr><tr><td>Access management</td><td>Entra ID and Fabric permissions</td><td>Role-based access control</td><td>Unity Catalog permissions</td></tr><tr><td>Row-level security</td><td>Supported</td><td>Supported</td><td>Supported through applicable mechanisms</td></tr><tr><td>Column-level security</td><td>Supported</td><td>Supported</td><td>Supported</td></tr><tr><td>Data lineage</td><td>Fabric/Purview capabilities</td><td>Snowflake lineage capabilities</td><td>Unity Catalog lineage</td></tr></tbody></table>
+<p>Governance integration does not automatically create a single unified security policy across all three platforms. A user having access to a Fabric workspace does not automatically have access to a Snowflake database or AWS S3 bucket.</p>
+</section>
+<section class="page" id="coexist">
+<h1>5. How the three platforms can work together</h1>
+<p>Rather than choosing one platform to replace everything, an enterprise can use the three platforms for different responsibilities.</p>
+<h2>5.1 Scenario A – Snowflake is the primary data warehouse</h2>
+<div class="diagram"><svg viewBox="0 0 900 340" role="img" aria-label="Snowflake on AWS serving Power BI">
+<rect x="35" y="35" width="270" height="250" rx="14" class="tealbox"/><text x="170" y="70" text-anchor="middle" class="svgh">AWS</text><rect x="70" y="110" width="200" height="90" rx="10" class="whitebox"/><text x="170" y="145" text-anchor="middle" class="svglabel">Snowflake</text><text x="170" y="170" text-anchor="middle" class="svgs">Enterprise data warehouse</text>
+<path d="M305 160 H550" class="connector"/><text x="428" y="143" text-anchor="middle" class="svgs">Native connector</text>
+<rect x="550" y="35" width="315" height="250" rx="14" class="bluebox"/><text x="707" y="70" text-anchor="middle" class="svgh">Microsoft Fabric</text><rect x="590" y="110" width="235" height="90" rx="10" class="whitebox"/><text x="707" y="145" text-anchor="middle" class="svglabel">Power BI</text><text x="707" y="170" text-anchor="middle" class="svgs">Semantic models and reports</text><text x="450" y="320" text-anchor="middle" class="svgs">No OneLake copy is required for direct connector-based reporting</text></svg></div>
+<ol><li>Snowflake remains the system of record for curated analytical data.</li><li>Power BI connects to Snowflake through its supported connector.</li><li>Depending on requirements, Power BI uses Import or DirectQuery.</li><li>OneLake is not required to store a second copy of Snowflake data.</li></ol>
+<p><strong>Advantages:</strong> Preserves existing Snowflake investment, avoids mandatory migration, minimizes unnecessary duplication, and allows Fabric to be adopted primarily for Power BI.</p>
+<h2>5.2 Scenario B – Fabric becomes the enterprise analytics platform</h2>
+<div class="diagram"><svg viewBox="0 0 900 390" role="img" aria-label="Multiple external platforms integrated through OneLake">
+<rect x="20" y="25" width="245" height="330" rx="14" class="tealbox"/><text x="142" y="60" text-anchor="middle" class="svgh">External data estate</text><rect x="55" y="95" width="175" height="48" rx="8" class="whitebox"/><text x="142" y="125" text-anchor="middle" class="svglabel">Snowflake</text><rect x="55" y="160" width="175" height="48" rx="8" class="whitebox"/><text x="142" y="190" text-anchor="middle" class="svglabel">Databricks</text><rect x="55" y="225" width="175" height="48" rx="8" class="whitebox"/><text x="142" y="255" text-anchor="middle" class="svglabel">ADLS / S3</text>
+<path d="M265 190 H390" class="connector"/><text x="327" y="170" text-anchor="middle" class="svgs">Connect / shortcut / mirror</text>
+<rect x="390" y="25" width="245" height="330" rx="14" class="bluebox"/><text x="512" y="60" text-anchor="middle" class="svgh">OneLake</text><rect x="425" y="115" width="175" height="75" rx="9" class="blueinner"/><text x="512" y="145" text-anchor="middle" class="svglabel">Logical data layer</text><text x="512" y="168" text-anchor="middle" class="svgs">Selected native data</text><rect x="425" y="220" width="175" height="75" rx="9" class="whitebox"/><text x="512" y="250" text-anchor="middle" class="svglabel">Fabric workloads</text><text x="512" y="273" text-anchor="middle" class="svgs">Spark / Warehouse / BI</text>
+<path d="M635 190 H710" class="connector"/><rect x="710" y="105" width="170" height="170" rx="14" class="greenbox"/><text x="795" y="160" text-anchor="middle" class="svglabel">Power BI</text><text x="795" y="190" text-anchor="middle" class="svgs">Semantic models</text><text x="795" y="215" text-anchor="middle" class="svgs">Reports</text></svg></div>
+<p>OneLake becomes the shared logical data foundation. Fabric provides integration and transformation capabilities; Power BI consumes curated data through Direct Lake where supported; Snowflake and Databricks remain operational platforms for specialized workloads.</p>
+<p>This does not mean every source should be migrated into OneLake.</p>
+<h2>5.3 Scenario C – Databricks is the enterprise lakehouse</h2>
+<div class="diagram"><svg viewBox="0 0 900 360" role="img" aria-label="Databricks lakehouse with Power BI and optional Snowflake">
+<rect x="25" y="25" width="850" height="115" rx="14" class="greenbox"/><text x="450" y="60" text-anchor="middle" class="svgh">Cloud object storage</text><text x="450" y="92" text-anchor="middle" class="svgs">ADLS / S3 • Delta Lake / Iceberg • Unity Catalog</text>
+<path d="M450 140 V185 M205 185 H695 M205 185 V215 M450 185 V215 M695 185 V215" class="connector"/>
+<rect x="45" y="215" width="320" height="105" rx="12" class="tealbox"/><text x="205" y="253" text-anchor="middle" class="svglabel">Databricks</text><text x="205" y="278" text-anchor="middle" class="svgs">Engineering • Data science • AI</text>
+<rect x="395" y="215" width="110" height="105" rx="12" class="bluebox"/><text x="450" y="255" text-anchor="middle" class="svglabel">Power BI</text><text x="450" y="278" text-anchor="middle" class="svgs">BI</text>
+<rect x="535" y="215" width="320" height="105" rx="12" class="tealbox"/><text x="695" y="253" text-anchor="middle" class="svglabel">Snowflake (optional)</text><text x="695" y="278" text-anchor="middle" class="svgs">Specialized SQL warehouse</text></svg></div>
+<p>Databricks is the primary data engineering and data science platform. Data resides in ADLS or S3; Delta Lake and Iceberg provide open table formats; Unity Catalog provides governance. Snowflake can coexist for specialized SQL warehousing. Power BI connects to Databricks SQL or other supported interfaces.</p>
+</section>
+<section class="page" id="crosscloud">
+<h1>6. OneLake and cross-cloud data access</h1>
+<p>OneLake is particularly interesting for enterprises with data distributed across multiple cloud providers.</p>
+<div class="diagram"><svg viewBox="0 0 900 540" role="img" aria-label="Enterprise multi-cloud sources integrated with Fabric and Power BI">
+<rect x="25" y="20" width="400" height="120" rx="12" class="bluebox"/><text x="225" y="52" text-anchor="middle" class="svgh">Azure</text><text x="225" y="83" text-anchor="middle" class="svgs">ADLS Gen2 • Databricks • SQL Server</text>
+<rect x="475" y="20" width="400" height="120" rx="12" class="tealbox"/><text x="675" y="52" text-anchor="middle" class="svgh">AWS</text><text x="675" y="83" text-anchor="middle" class="svgs">S3 • Snowflake • Databricks</text>
+<rect x="25" y="165" width="400" height="120" rx="12" class="whitebox"/><text x="225" y="198" text-anchor="middle" class="svglabel">On-premises</text><text x="225" y="230" text-anchor="middle" class="svgs">Teradata • Oracle • DB2</text>
+<rect x="475" y="165" width="400" height="120" rx="12" class="whitebox"/><text x="675" y="198" text-anchor="middle" class="svglabel">Other</text><text x="675" y="230" text-anchor="middle" class="svgs">PostgreSQL • HDFS • S3-compatible</text>
+<path d="M225 140 V320 M675 140 V320 M225 285 V320 M675 285 V320 M225 320 H675 M450 320 V350" class="connector"/>
+<rect x="220" y="350" width="460" height="85" rx="14" class="bluebox"/><text x="450" y="385" text-anchor="middle" class="svgh">Microsoft Fabric / OneLake</text><text x="450" y="410" text-anchor="middle" class="svgs">Logical access, supported shortcuts, mirroring and integration</text>
+<path d="M450 435 V465" class="connector"/><rect x="285" y="465" width="330" height="60" rx="12" class="greenbox"/><text x="450" y="502" text-anchor="middle" class="svglabel">Power BI – semantic models and reporting</text></svg></div>
+<p>There are several integration patterns:</p>
+<table><thead><tr><th>Pattern</th><th>Data movement</th><th>When to use</th></tr></thead><tbody><tr><td>Direct connectivity</td><td>No initial copy</td><td>Query external databases directly</td></tr><tr><td>OneLake shortcuts</td><td>No initial copy</td><td>Access supported external open-format files/tables</td></tr><tr><td>Mirroring</td><td>Usually yes for database replication; varies by mechanism</td><td>Continuously replicate databases or reference external catalogs</td></tr><tr><td>ETL/ELT pipelines</td><td>Yes</td><td>Transform, consolidate or move data</td></tr></tbody></table>
+<div class="callout"><strong>Important architectural warning</strong><p>Zero-copy does not mean zero cost or zero latency. For cross-cloud access, consider network latency, AWS data egress charges, Azure network charges, source system query consumption, concurrent query workloads, caching, data transfer volume and network security.</p><p>It is often better to keep compute close to the data for heavy processing and use cross-cloud access for appropriate analytical consumption.</p></div>
+</section>
+<section class="page" id="recommendations">
+<h1>7. Applying the comparison to your enterprise architecture</h1>
+<p>For an enterprise landscape containing cloud and on-premises platforms, the integration method should be selected per source and workload. The following is a starting point for design discussion, not a certification of every connector or feature combination.</p>
+<h2>7.1 Source integration inventory</h2>
+<table><thead><tr><th>Existing data source</th><th>Recommended integration approach to evaluate</th></tr></thead><tbody>
+<tr><td>Snowflake on AWS</td><td>Native Power BI connector, or Fabric Snowflake mirroring where appropriate</td></tr><tr><td>Snowflake on Azure</td><td>Native Power BI connector, or mirroring</td></tr><tr><td>Databricks on AWS</td><td>Databricks SQL connector, or supported open-format integration</td></tr><tr><td>Databricks on Azure</td><td>Databricks SQL connector, or Unity Catalog metadata mirroring where supported</td></tr><tr><td>ADLS Gen2</td><td>OneLake shortcut</td></tr><tr><td>AWS S3</td><td>OneLake shortcut for supported formats</td></tr><tr><td>Teradata</td><td>Native connector or gateway-based connectivity</td></tr><tr><td>SQL Server</td><td>Native connector, gateway or mirroring where supported</td></tr><tr><td>DB2</td><td>Native connector or gateway-based connectivity</td></tr><tr><td>Oracle</td><td>Native connector or gateway-based connectivity</td></tr><tr><td>PostgreSQL</td><td>Native connector, gateway or mirroring where supported</td></tr><tr><td>Hadoop HDFS</td><td>Appropriate connector or data integration process</td></tr><tr><td>EMS S3 + Iceberg</td><td>Shortcut-based access if compatible with supported Iceberg implementation</td></tr>
+</tbody></table>
+<h2>7.2 Recommended architectural principles</h2>
+<ol><li><strong>Source data ownership remains with the source platform.</strong> Snowflake, Databricks, ADLS, S3 and on-premises databases retain ownership of their data. Fabric should not automatically become another enterprise data repository.</li><li><strong>Prefer direct connectivity or zero-copy access.</strong> Use native connectors, shortcuts and metadata mirroring where technically appropriate.</li><li><strong>Use replication only when justified.</strong> Legitimate reasons include performance, Power BI Direct Lake, source workload isolation, data consolidation, cross-system analytics, and regulatory or operational requirements.</li><li><strong>Separate data engineering from BI consumption.</strong> If Databricks or Snowflake already performs enterprise data engineering, avoid unnecessarily rebuilding the same ETL processes in Fabric.</li><li><strong>Establish enterprise-wide governance.</strong> Define consistent data ownership, identity, security, lineage, data classification and access management across all platforms.</li></ol>
+<h2>7.3 Important limitations and considerations</h2>
+<h3>OneLake shortcuts are not universal database connectors</h3><p>A shortcut to AWS S3 is not equivalent to a shortcut to an AWS-hosted Snowflake database. The former references supported storage objects. The latter requires a database integration mechanism.</p>
+<h3>Fabric mirroring has source-specific limitations</h3><p>Feature support, source versions, authentication, network connectivity, table limits and regional availability can vary. For example, Snowflake mirroring documentation has specified limitations around table counts, workspace identity authentication and private connectivity. These details are subject to change and must be checked against current documentation before design approval.</p>
+<h3>Security must be designed across platforms</h3><p>Microsoft Entra ID, Snowflake authorization, Databricks Unity Catalog and AWS IAM/S3 policies are distinct security systems. Permissions should not be assumed to propagate automatically.</p>
+<h3>Direct Lake does not eliminate every data movement requirement</h3><p>Direct Lake requires supported OneLake data structures. For proprietary external tables, compare direct Power BI connectivity, replication into OneLake, and open-format sharing using Delta or Iceberg.</p>
+<h2>7.4 Final platform assessment</h2>
+<div class="cards"><article><h3>Microsoft Fabric</h3><span class="pill">Integrated Microsoft BI ecosystem</span><p>Integrated Power BI and data analytics; simplified SaaS analytics; Direct Lake; integrated data engineering, warehousing and reporting; logical data access through OneLake.</p></article><article><h3>Snowflake</h3><span class="pill">Managed cloud data warehousing</span><p>Strong SQL warehousing; independent compute scaling; workload isolation; managed infrastructure; enterprise data sharing and analytics.</p></article><article><h3>Databricks</h3><span class="pill">Data engineering and AI-intensive environments</span><p>Large-scale processing; complex engineering; advanced analytics and ML; open lakehouse architecture; flexible cloud storage and compute.</p></article></div>
+<h2>7.5 Recommended enterprise positioning</h2>
+<div class="diagram"><svg viewBox="0 0 900 470" role="img" aria-label="Recommended enterprise architecture positioning">
+<rect x="30" y="20" width="840" height="115" rx="14" class="tealbox"/><text x="450" y="55" text-anchor="middle" class="svgh">Existing enterprise data platforms</text><rect x="65" y="80" width="220" height="38" rx="7" class="whitebox"/><text x="175" y="105" text-anchor="middle" class="svgs">Snowflake – SQL warehouse</text><rect x="340" y="80" width="220" height="38" rx="7" class="whitebox"/><text x="450" y="105" text-anchor="middle" class="svgs">Databricks – Engineering / AI</text><rect x="615" y="80" width="220" height="38" rx="7" class="whitebox"/><text x="725" y="105" text-anchor="middle" class="svgs">ADLS / S3 – Object storage</text>
+<path d="M450 135 V180" class="connector"/><rect x="150" y="180" width="600" height="110" rx="14" class="bluebox"/><text x="450" y="220" text-anchor="middle" class="svgh">Microsoft Fabric / OneLake</text><text x="450" y="250" text-anchor="middle" class="svgs">Logical data access • Fabric-native analytics • Selected approved data products</text>
+<path d="M450 290 V335" class="connector"/><rect x="235" y="335" width="430" height="100" rx="14" class="greenbox"/><text x="450" y="375" text-anchor="middle" class="svgh">Power BI</text><text x="450" y="405" text-anchor="middle" class="svgs">Enterprise semantic models • Reporting • Dashboards</text></svg></div>
+<table><thead><tr><th>Platform</th><th>Proposed enterprise responsibility</th></tr></thead><tbody><tr><td>Snowflake</td><td>Enterprise SQL data warehousing</td></tr><tr><td>Databricks</td><td>Advanced data engineering, data science and AI</td></tr><tr><td>ADLS / AWS S3</td><td>Cloud data storage</td></tr><tr><td>OneLake</td><td>Unified logical data access and Fabric-native storage</td></tr><tr><td>Microsoft Fabric</td><td>Integrated analytics and data integration where needed</td></tr><tr><td>Power BI</td><td>Enterprise BI, reporting and semantic models</td></tr></tbody></table>
+<div class="callout"><strong>Central recommendation</strong><p>Microsoft Fabric Power BI should be the enterprise BI and reporting platform without automatically requiring the enterprise to migrate or duplicate its existing data into OneLake.</p><p>Define whether OneLake is an integration/access layer for existing data platforms, a destination for selected curated analytical data, or both under explicit rules. This avoids creating three competing enterprise data repositories and duplicating data engineering capabilities.</p></div>
+</section>
+<section class="page" id="references">
+<h1>8. Discussion checklist and references</h1>
+<h2>8.1 Discussion questions for the architecture review</h2>
+<ol><li>What is the target role of Fabric: BI-only, integrated analytics, or strategic enterprise data platform?</li><li>Which platform is authoritative for each major data domain and curated data product?</li><li>What datasets genuinely require OneLake persistence, and which should remain external?</li><li>Which Direct Lake use cases justify replicating data into OneLake?</li><li>Which cross-cloud access paths are acceptable from a latency, security and cost perspective?</li><li>What is the standard pattern for on-premises connectivity and gateway high availability?</li><li>How will enterprise metrics and semantic models be governed across Power BI, Snowflake and Databricks?</li><li>What operational model will monitor cost, performance, freshness, lineage and incidents across platforms?</li></ol>
+<h2>8.2 Official technical documentation</h2>
+<p>Use current vendor documentation to validate feature availability, limitations, regional support and licensing before implementation.</p>
+<ul class="refs">
+<li><a href="https://learn.microsoft.com/fabric/get-started/microsoft-fabric-overview" target="_blank" rel="noopener">Microsoft Fabric overview</a></li>
+<li><a href="https://learn.microsoft.com/fabric/onelake/onelake-overview" target="_blank" rel="noopener">Microsoft OneLake overview</a></li>
+<li><a href="https://learn.microsoft.com/fabric/onelake/onelake-shortcuts" target="_blank" rel="noopener">OneLake shortcuts</a></li>
+<li><a href="https://learn.microsoft.com/fabric/onelake/security" target="_blank" rel="noopener">OneLake security</a></li>
+<li><a href="https://learn.microsoft.com/fabric/database/mirrored-database/overview" target="_blank" rel="noopener">Fabric mirroring overview</a></li>
+<li><a href="https://learn.microsoft.com/power-bi/enterprise/directlake-overview" target="_blank" rel="noopener">Power BI Direct Lake</a></li>
+<li><a href="https://learn.microsoft.com/power-query/connectors/snowflake" target="_blank" rel="noopener">Power Query Snowflake connector</a></li>
+<li><a href="https://learn.microsoft.com/power-query/connectors/databricks" target="_blank" rel="noopener">Power Query Azure Databricks connector</a></li>
+<li><a href="https://docs.snowflake.com/en/user-guide/intro-key-concepts" target="_blank" rel="noopener">Snowflake architecture concepts</a></li>
+<li><a href="https://docs.snowflake.com/en/user-guide/tables-iceberg" target="_blank" rel="noopener">Snowflake Apache Iceberg tables</a></li>
+<li><a href="https://docs.databricks.com/en/lakehouse/index.html" target="_blank" rel="noopener">Databricks lakehouse architecture</a></li>
+<li><a href="https://docs.databricks.com/en/data-governance/unity-catalog/index.html" target="_blank" rel="noopener">Databricks Unity Catalog</a></li>
+<li><a href="https://docs.databricks.com/en/query-federation/index.html" target="_blank" rel="noopener">Databricks Lakehouse Federation</a></li>
+<li><a href="https://docs.delta.io/latest/index.html" target="_blank" rel="noopener">Delta Lake documentation</a></li>
+<li><a href="https://iceberg.apache.org/docs/latest/" target="_blank" rel="noopener">Apache Iceberg documentation</a></li>
+</ul>
+<h2>8.3 Important qualification</h2>
+<p>This guide is intended as a discussion aid and conceptual architecture comparison. It is not a product support matrix, security design, performance benchmark, licensing assessment or implementation specification. Product capabilities change; verify the exact source version, cloud, region, SKU, identity configuration, network path and feature status for each proposed integration.</p>
+<div class="callout"><strong>Closing architecture principle</strong><p>Use each platform where it provides clear enterprise value. Preserve source ownership, avoid default data duplication, choose integration patterns by workload, and make cross-platform security and operations explicit.</p></div>
+</section></div>
+  <div class="footer">Enterprise architecture discussion guide · Product capabilities should be validated against current vendor documentation.</div>
+</main>
+</div>
+<script>
+(function(){
+ const pages=[...document.querySelectorAll('.page')], links=[...document.querySelectorAll('.nav a')];
+ function show(id){
+   if(!pages.some(p=>p.id===id)) id=pages[0].id;
+   pages.forEach(p=>p.classList.toggle('active',p.id===id));
+   links.forEach(a=>a.classList.toggle('active',a.dataset.page===id));
+   if(location.hash!=='#'+id) history.replaceState(null,'','#'+id);
+   window.scrollTo({top:0,behavior:'smooth'});
+ }
+ links.forEach(a=>a.addEventListener('click',e=>{e.preventDefault();show(a.dataset.page);}));
+ window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+ show(location.hash.slice(1)||pages[0].id);
+})();
+</script>
+</body>
+</html>
